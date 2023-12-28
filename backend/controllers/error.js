@@ -2,7 +2,7 @@ const appError = class appError extends Error {
   constructor(message, statusCode) {
     super(message);
     this.statusCode = statusCode;
-    this.status = `${statusCode}`.startsWith("4") ? "fail" : "error";
+    this.status = statusCode;
     this.code=statusCode;
     this.isOperational = true;
 
@@ -14,6 +14,7 @@ const devErrorHandler = (res, error) => {
   console.log("Error ", error);
   res.status(error.statusCode).json({
     status: error.status,
+    errors:[error],
     message: error.message,
     stackTrace: error.stack,
   });
@@ -23,14 +24,15 @@ const prodErrorHandler = (res, error) => {
   if (error.isOperational) {
     res.status(error.statusCode).json({
       status: error.status,
+      errors: [error],
       message: error.message,
     });
   } else {
     console.log("Error ", error);
     res.status(500).json({
-      status: "error",
+      status: 500,
       message: "something went wrong!",
-      error: error,
+      errors: [error],
     });
   }
 };

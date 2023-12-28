@@ -50,11 +50,19 @@ class App extends Component {
   };
 
   logoutHandler = () => {
-    fetch("http://localhost:8080/auth/logout", {
+    const graphqlQuery = {
+      query: `{
+        logout(token: "${this.state.token}")
+      }`,
+    };
+
+    fetch("http://localhost:8080/graphql", {
       method: "POST",
       headers: {
         authorization: "Bearer " + this.state.token,
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify(graphqlQuery),
     }).then((res) => {
       this.setState({ isAuth: false, token: null });
       localStorage.removeItem("token");

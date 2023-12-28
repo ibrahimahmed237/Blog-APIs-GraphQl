@@ -208,8 +208,17 @@ class Feed extends Component {
         return res.json();
       })
       .then((FileData) => {
-        const imageUrl = FileData.image.imageUrl;
-        const imageId = FileData.image._id;
+        if (FileData.errors) {
+          throw new Error("Image upload failed!");
+        }
+        let imageUrl, imageId;
+        if (FileData.image) {
+          imageUrl = FileData.image.imageUrl;
+          imageId = FileData.image._id;
+        } else {
+          imageUrl = "UNDEFINED";
+          imageId = "UNDEFINED";
+        }
         let url = "http://localhost:8080/graphql";
         let graphqlQuery = {
           query: `
@@ -225,14 +234,26 @@ class Feed extends Component {
       }
       `,
         };
-        let method = "POST";
         if (this.state.editPost) {
-          url = "http://localhost:8080/graphql" + this.state.editPost._id;
-          method = "PUT";
+          graphqlQuery = {
+            query: `
+      mutation { updatePost(id: "${this.state.editPost._id}", postInput: {title: "${postData.title}", content: "${postData.content}", image: {imageUrl: "${imageUrl}", _id: "${imageId}"}})
+            
+        { _id 
+          title
+          content
+          creator{name _id}
+          image{imageUrl _id}
+          createdAt
+          updatedAt
+        }
+      }
+      `,
+          };
         }
 
         fetch(url, {
-          method: method,
+          method: "POST",
           headers: {
             authorization: "Bearer " + this.props.token,
             "Content-Type": "application/json",
@@ -242,22 +263,28 @@ class Feed extends Component {
           .then((res) => {
             return res.json();
           })
-          .then((resData) => {
-            console.log(resData);
+          .then(resData=> {
+            console.log(resData.errors);
             if (resData.errors && resData.errors[0].status === 422) {
               throw new Error("Validation failed.");
             }
             if (resData.errors) {
               throw new Error("Creating or editing a post failed!");
             }
+            let newPostData = resData.data.createPost;
+            if (this.state.editPost) newPostData = resData.data.updatePost;
+
             const post = {
-              _id: resData.data.createPost._id,
-              title: resData.data.createPost.title,
-              content: resData.data.createPost.content,
-              creator: resData.data.createPost.creator,
-              createdAt: resData.data.createPost.createdAt,
-              updatedAt: resData.data.createPost.updatedAt,
-              image:{imageUrl: resData.data.createPost.image.imageUrl, _id: resData.data.createPost.image._id}
+              _id: newPostData._id,
+              title: newPostData.title,
+              content: newPostData.content,
+              creator: newPostData.creator,
+              createdAt: newPostData.createdAt,
+              updatedAt: newPostData.updatedAt,
+              image: {
+                imageUrl: newPostData.imageUrl,
+                _id: newPostData._id,
+              },
             };
             this.setState((prevState) => {
               let updatedPosts = [...prevState.posts];

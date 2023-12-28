@@ -5,6 +5,14 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const Post = require("../models/Post");
 const asyncHandler = require("express-async-handler");
+const cloudinary = require("cloudinary").v2;
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
 module.exports = {
   createUser: asyncHandler(async function ({ userInput }, req) {
     let user = {
@@ -52,8 +60,11 @@ module.exports = {
       creator: user,
     });
     const { error, value } = postValidator(post);
-    if (error) return new appError(error, 422);
-
+    if (error) {
+      await cloudinary.uploader.destroy(postInput.image._id);
+      return new appError("Invalid Validation.", 422);
+    }
+    if (!postInput.image) return new appError("Error uploading image.", 422);
     post = {
       title: value.title,
       content: value.content,
@@ -114,5 +125,45 @@ module.exports = {
     const user = await User.findById(req.userId);
     if (!user) return new appError("Invalid user.", 404);
     return user.status.toString();
+  }),
+  updatePost: asyncHandler(async function ({ id, postInput }, req) {
+    if (!req.isAuth) return new appError("Unauthenticated!", 401);
+    const post = await Post.findById(id).populate("creator");
+    if (!post) return new appError("No post found!", 404);
+    if (post.creator._id.toString() !== req.userId.toString())
+      return new appError("Not authorized!", 403);
+
+    const { error, value } = postValidator(postInput);
+    if (error) {
+      await cloudinary.uploader.destroy(postInput.image._id);
+      return new appError(error, 422);
+    }
+    post.title = value.title;
+    post.content = value.content;
+    if (postInput.image._id.toString() !== "UNDEFINED" ) {
+      await cloudinary.uploader.destroy(post.image._id);
+      post.image = {
+        imageUrl: postInput.image.imageUrl,
+        _id: postInput.image._id,
+      };
+    }
+    await post.save();
+    return {
+      ...post._doc,
+      _id: post._id.toString(),
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString(),
+    };
+  }),
+  logout: asyncHandler(async function ({token}, req) {
+    if (!req.isAuth) return new appError("Unauthenticated!", 401);
+    const user = await User.findById(req.userId);
+    if (!user) return new appError("Invalid user.", 404);
+
+    user.tokens = user.tokens.filter((tokens) => {
+      return tokens.token !== token;
+    });
+    await user.save();
+    return true;
   }),
 };

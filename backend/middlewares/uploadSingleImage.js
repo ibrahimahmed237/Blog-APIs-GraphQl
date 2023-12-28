@@ -28,7 +28,7 @@ module.exports = asyncHandler(async (req, res, next) => {
   upload(req, res, async function (err) {
     if(!req.isAuth) return next(new appError("Unauthenticated!", 401));
     if (err) return next(new appError(err, 422));
-    if (!req.file) return next(new appError("No image provided!", 422));
+    if (!req.file) return res.status(200).json({ message: "No image provided." });
     
     const image = await cloudinary.uploader.upload(req.file.path);
     if (!image) return next(new appError("Error uploading image.", 422));
