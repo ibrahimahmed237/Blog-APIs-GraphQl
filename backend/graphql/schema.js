@@ -45,6 +45,8 @@ module.exports = buildSchema(`
         login(email: String!, password: String!): AuthData!
         createPost(postInput: PostInputData): Post!
         updatePost(id: ID!, postInput: PostInputData): Post!
+        deletePost(id: ID!): Boolean!
+        updateStatus(status: String!): User!
     } 
     type PostData {
         posts: [Post!]!

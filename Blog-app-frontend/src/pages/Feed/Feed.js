@@ -150,24 +150,32 @@ class Feed extends Component {
 
   statusUpdateHandler = (event) => {
     event.preventDefault();
-    fetch("http://localhost:8080/auth/status", {
-      method: "PUT",
+    const graphqlQuery = {
+      query: `
+      mutation { updateStatus(status: "${this.state.status}") {
+        status
+      }
+    }
+      `,
+    };
+    fetch("http://localhost:8080/graphql", {
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
         authorization: "Bearer " + this.props.token,
       },
-      body: JSON.stringify({
-        status: this.state.status,
-      }),
+      body: JSON.stringify(graphqlQuery),
     })
       .then((res) => {
-        if (res.status !== 200 && res.status !== 201) {
-          throw new Error("Can't update status!");
-        }
         return res.json();
       })
       .then((resData) => {
         // console.log(resData);
+        if (resData.errors) {
+          throw new Error("Can't update status!");
+        }
+        this.setState({ status: resData.data.updateStatus.status });
+
       })
       .catch(this.catchError);
   };
@@ -325,20 +333,27 @@ class Feed extends Component {
 
   deletePostHandler = (postId) => {
     this.setState({ postsLoading: true });
-    fetch("http://localhost:8080/feed/post/" + postId, {
-      method: "DELETE",
+    const graphqlQuery = {
+      query: `
+      mutation { deletePost(id: "${postId}") }
+      `,
+    };
+    fetch("http://localhost:8080/graphql", {
+      method: "POST",
       headers: {
         authorization: "Bearer " + this.props.token,
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify(graphqlQuery),
     })
       .then((res) => {
-        if (res.status !== 200 && res.status !== 201) {
-          throw new Error("Deleting a post failed!");
-        }
         return res.json();
       })
       .then((resData) => {
         // console.log(resData);
+        if (resData.errors) {
+          throw new Error("Deleting a post failed!");
+        }
         this.loadPosts();
       })
       .catch((err) => {

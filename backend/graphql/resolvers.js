@@ -140,7 +140,7 @@ module.exports = {
     }
     post.title = value.title;
     post.content = value.content;
-    if (postInput.image._id.toString() !== "UNDEFINED" ) {
+    if (postInput.image._id.toString() !== "UNDEFINED") {
       await cloudinary.uploader.destroy(post.image._id);
       post.image = {
         imageUrl: postInput.image.imageUrl,
@@ -155,7 +155,33 @@ module.exports = {
       updatedAt: post.updatedAt.toISOString(),
     };
   }),
-  logout: asyncHandler(async function ({token}, req) {
+  deletePost: asyncHandler(async function ({ id }, req) {
+    const post = await Post.findById(id);
+    if (!post) return new appError("No post found!", 404);
+    if (post.creator.toString() !== req.userId.toString())
+      return new appError("Not authorized!", 403);
+
+    const user = await User.findById(req.userId);
+    user.posts.pull(id);
+    await user.save();
+    await cloudinary.uploader.destroy(post.image._id);
+    await Post.findByIdAndDelete(post._id);
+    return true;
+  }),
+
+  updateStatus: asyncHandler(async function ({ status }, req) {
+    if (!req.isAuth) return new appError("Unauthenticated!", 401);
+    const user = await User.findById(req.userId);
+    if (!user) return new appError("Invalid user.", 404);
+    user.status = status;
+    await user.save();
+    return {
+      ...user._doc,
+      _id: user._id.toString(),
+    };
+  }),
+
+  logout: asyncHandler(async function ({ token }, req) {
     if (!req.isAuth) return new appError("Unauthenticated!", 401);
     const user = await User.findById(req.userId);
     if (!user) return new appError("Invalid user.", 404);
