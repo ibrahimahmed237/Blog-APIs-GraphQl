@@ -105,7 +105,7 @@ class Feed extends Component {
     }
     let graphqlQuery = {
       query: `
-      query { posts(page: ${page})
+      query getPosts($page:Int!){ posts(page: $page)
         {  posts{_id
           title
           content
@@ -123,6 +123,7 @@ class Feed extends Component {
         }
       }
       `,
+      variables: { page: page },
     };
     fetch("http://localhost:8080/graphql", {
       headers: {
@@ -152,11 +153,12 @@ class Feed extends Component {
     event.preventDefault();
     const graphqlQuery = {
       query: `
-      mutation { updateStatus(status: "${this.state.status}") {
+      mutation updateStatus($status:String!){ updateStatus(status: $status) {
         status
       }
     }
       `,
+      variables: { status: this.state.status },
     };
     fetch("http://localhost:8080/graphql", {
       method: "POST",
@@ -230,7 +232,7 @@ class Feed extends Component {
         let url = "http://localhost:8080/graphql";
         let graphqlQuery = {
           query: `
-      mutation { createPost(postInput: {title: "${postData.title}", content: "${postData.content}", image: {imageUrl: "${imageUrl}", _id: "${imageId}"}})   
+      mutation CreatePost($title:String!,$content:String!,$imageUrl:String!,$imageId:String!){ createPost(postInput: {title: $title, content:$content, image: {imageUrl: $imageUrl, _id: $imageId}})   
         { _id 
           title 
           content
@@ -239,24 +241,38 @@ class Feed extends Component {
           createdAt
           updatedAt
         } 
-      }
+      },
       `,
+          variables: { imageUrl: imageUrl, imageId: imageId, title: postData.title, content: postData.content },
         };
         if (this.state.editPost) {
           graphqlQuery = {
             query: `
-      mutation { updatePost(id: "${this.state.editPost._id}", postInput: {title: "${postData.title}", content: "${postData.content}", image: {imageUrl: "${imageUrl}", _id: "${imageId}"}})
-            
-        { _id 
-          title
-          content
-          creator{name _id}
-          image{imageUrl _id}
-          createdAt
-          updatedAt
-        }
-      }
+      mutation updatePost($id:ID!, $title:String!, $content:String!, $imageUrl:String!, $imageId:String!) { 
+  updatePost(id: $id, postInput: {title: $title, content: $content, image: {imageUrl: $imageUrl, _id: $imageId}}) {
+    _id 
+    title
+    content
+    creator {
+      name 
+      _id
+    }
+    image {
+      imageUrl 
+      _id
+    }
+    createdAt
+    updatedAt
+  }
+}
       `,
+            variables: {
+              imageUrl: imageUrl,
+              imageId: imageId,
+              title: postData.title,
+              content: postData.content,
+              id: this.state.editPost._id,
+            },
           };
         }
 
@@ -272,7 +288,7 @@ class Feed extends Component {
             return res.json();
           })
           .then(resData=> {
-            console.log(resData.errors);
+            // console.log(resData.errors);
             if (resData.errors && resData.errors[0].status === 422) {
               throw new Error("Validation failed.");
             }
@@ -335,8 +351,10 @@ class Feed extends Component {
     this.setState({ postsLoading: true });
     const graphqlQuery = {
       query: `
-      mutation { deletePost(id: "${postId}") }
+      mutation deletePost($id: ID!)
+        { deletePost(id: $id) }
       `,
+      variables: { id: postId },
     };
     fetch("http://localhost:8080/graphql", {
       method: "POST",
