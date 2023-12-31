@@ -1,6 +1,6 @@
 const userValidator = require("../validation/user.js");
 const postValidator = require("../validation/post.js");
-const appError = require("../controllers/error.js").appError;
+const appError = require("../error-handling/error.js").appError;
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const Post = require("../models/Post");

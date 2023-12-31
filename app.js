@@ -3,8 +3,8 @@ const app = express();
 require("dotenv").config();
 const bodyParser = require("body-parser");
 const cors = require("cors");
-const errorHandler = require("./controllers/error.js");
-const appError = require("./controllers/error.js").appError;
+const errorHandler = require("./error-handling/error.js");
+const appError = require("./error-handling/error.js").appError;
 const { graphqlHTTP } = require("express-graphql");
 const isAuth = require("./middlewares/is-auth.js");
 const uploadSingleImage = require("./middlewares/uploadSingleImage.js")

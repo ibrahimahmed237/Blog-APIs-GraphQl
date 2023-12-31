@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const appError = require("./controllers/error.js").appError;
+const appError = require("./error-handling/error.js").appError;
 const app = require("./app.js");
 
 process.on("uncaughtException", (err) => {

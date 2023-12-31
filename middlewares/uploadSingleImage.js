@@ -1,5 +1,5 @@
 const multer = require("multer");
-const appError = require("../controllers/error.js").appError;
+const appError = require("../error-handling/error.js").appError;
 const asyncHandler = require("express-async-handler");
 const cloudinary = require("cloudinary").v2;
 
