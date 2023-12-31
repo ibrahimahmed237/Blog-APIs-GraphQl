@@ -1,4 +1,3 @@
-```markdown
 # Blog APIs Application with GraphQL
 
 This Node.js application provides GraphQL APIs for managing blog-related functionalities. It includes features such as user authentication, blog creation, editing, and deletion, image uploads, error handling, and utilizes Express.js as the web framework with GraphQL for enhanced flexibility in data retrieval. Below is a comprehensive guide on installation, usage, configuration, features, dependencies, and contributing.
@@ -80,4 +79,4 @@ The application requires several environment variables to be set for proper func
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-```
+
